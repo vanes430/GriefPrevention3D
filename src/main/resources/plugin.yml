@@ -195,6 +195,66 @@ commands:
     description: Gives a player a manual about claiming land.
     usage: /<command> <player>
     permission: griefprevention.claimbook
+  protect:
+    description: Create a claim.
+    usage: /<command>
+    permission: griefprevention.claims
+  list:
+    description: List your claims.
+    usage: /<command>
+    permission: griefprevention.claims
+  mode:
+    description: Switch tool mode.
+    usage: /<command>
+    permission: griefprevention.claims
+  explosions:
+    description: Toggle explosions in claim.
+    usage: /<command>
+    permission: griefprevention.claims
+  buyblocks:
+    description: Buy claim blocks.
+    usage: /<command>
+    permission: griefprevention.claims
+  sellblocks:
+    description: Sell claim blocks.
+    usage: /<command>
+    permission: griefprevention.claims
+  abandon:
+    description: Abandon a claim.
+    usage: /<command>
+    permission: griefprevention.claims
+  siege:
+    description: Siege a player/claim.
+    usage: /<command>
+    permission: griefprevention.siege
+  restore:
+    description: Restore nature.
+    usage: /<command>
+    permission: griefprevention.adminclaims
+  adminlist:
+    description: List admin claims.
+    usage: /<command>
+    permission: griefprevention.adminclaims
+  blocks:
+    description: Adjust claim blocks.
+    usage: /<command>
+    permission: griefprevention.adjustclaimblocks
+  delete:
+    description: Delete a claim.
+    usage: /<command>
+    permission: griefprevention.deleteclaims
+  transfer:
+    description: Transfer a claim.
+    usage: /<command>
+    permission: griefprevention.transferclaim
+  checkexpiry:
+    description: Check claim expiration.
+    usage: /<command>
+    permission: griefprevention.checkclaimexpiry
+  help:
+    description: GriefPrevention help.
+    usage: /<command>
+    permission: griefprevention.claims
 
 permissions:
   griefprevention.createclaims:
