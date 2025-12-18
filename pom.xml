@@ -55,7 +55,6 @@
                 <filtering>true</filtering>
                 <includes>
                     <include>plugin.yml</include>
-                    <include>paper-plugin.yml</include>
                 </includes>
             </resource>
         </resources>
