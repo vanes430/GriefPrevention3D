@@ -3662,9 +3662,111 @@ public class GriefPrevention extends JavaPlugin {
             } else {
                 GriefPrevention.sendMessage(player, TextMode.Success, Messages.UntrustEveryoneAllClaims);
             }
+        } else if (claim.checkPermission(player, ClaimPermission.Manage, null) != null) {
+            GriefPrevention.sendMessage(player, TextMode.Err, Messages.NoPermissionTrust, claim.getOwnerName());
+            return true;
         } else {
-            // Apply to specific claim - simplified version
-            GriefPrevention.sendMessage(player, TextMode.Err, Messages.CommandNotImplementedYet);
+            // if clearing all
+            if (clearPermissions) {
+                // requires owner
+                if (claim.checkPermission(player, ClaimPermission.Edit, null) != null) {
+                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.UntrustAllOwnerOnly);
+                    return true;
+                }
+
+                // calling the event
+                TrustChangedEvent event = new TrustChangedEvent(player, claim, null, false, args[0]);
+                Bukkit.getPluginManager().callEvent(event);
+
+                if (event.isCancelled()) {
+                    return true;
+                }
+
+                event.getClaims().forEach(Claim::clearPermissions);
+                GriefPrevention.sendMessage(player, TextMode.Success, Messages.ClearPermissionsOneClaim);
+            }
+
+            // otherwise individual permission drop
+            else {
+                String idToDrop = args[0];
+                if (otherPlayer != null) {
+                    idToDrop = otherPlayer.getUniqueId().toString();
+                }
+                boolean targetIsManager = claim.managers.contains(idToDrop);
+                if (targetIsManager && claim.checkPermission(player, ClaimPermission.Edit, null) != null) // only
+                                                                                                          // claim
+                                                                                                          // owners
+                                                                                                          // can
+                                                                                                          // untrust
+                                                                                                          // managers
+                {
+                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.ManagersDontUntrustManagers,
+                            claim.getOwnerName());
+                    return true;
+                } else {
+                    // calling the event
+                    TrustChangedEvent event = new TrustChangedEvent(player, claim, null, false, idToDrop);
+                    Bukkit.getPluginManager().callEvent(event);
+
+                    if (event.isCancelled()) {
+                        return true;
+                    }
+
+                    // Check if the player being untrusted has inherited permissions from parent
+                    ArrayList<String> parentBuilders = new ArrayList<>();
+                    ArrayList<String> parentContainers = new ArrayList<>();
+                    ArrayList<String> parentAccessors = new ArrayList<>();
+                    ArrayList<String> parentManagers = new ArrayList<>();
+
+                    String normalizedIdentifier = Claim.normalizeIdentifier(event.getIdentifier());
+                    String normalizedIdToDrop = Claim.normalizeIdentifier(idToDrop);
+
+                    if (claim.parent != null && !claim.getSubclaimRestrictions()) {
+                        claim.parent.getPermissions(parentBuilders, parentContainers, parentAccessors,
+                                parentManagers);
+                    }
+
+                    boolean inheritsManager = parentManagers.contains(normalizedIdToDrop);
+                    boolean inheritsBuilder = parentBuilders.contains(normalizedIdToDrop);
+                    boolean inheritsContainer = parentContainers.contains(normalizedIdToDrop);
+                    boolean inheritsAccessor = parentAccessors.contains(normalizedIdToDrop);
+
+                    if (inheritsManager || inheritsBuilder || inheritsContainer || inheritsAccessor) {
+                        event.getClaims().forEach(targetClaim -> {
+                            // Record denials to block inherited trust without granting new permissions
+                            if (inheritsManager) {
+                                targetClaim.denyPermission(normalizedIdToDrop + "#manager");
+                            }
+                            if (inheritsBuilder) {
+                                targetClaim.denyPermission(normalizedIdToDrop + "#build");
+                            }
+                            if (inheritsContainer) {
+                                targetClaim.denyPermission(normalizedIdToDrop + "#inventory");
+                            }
+                            if (inheritsAccessor) {
+                                targetClaim.denyPermission(normalizedIdToDrop + "#access");
+                            }
+
+                            // Remove any explicit trust that might still exist
+                            targetClaim.dropPermission(normalizedIdentifier);
+                        });
+                    } else {
+                        // Normal case - just drop the explicit permission
+                        event.getClaims().forEach(targetClaim -> targetClaim.dropPermission(normalizedIdentifier));
+                    }
+
+                    // beautify for output
+                    if (args[0].equals("public")) {
+                        args[0] = "the public";
+                    }
+
+                    GriefPrevention.sendMessage(player, TextMode.Success, Messages.UntrustIndividualSingleClaim,
+                            args[0]);
+                }
+            }
+
+            // save changes
+            this.dataStore.saveClaim(claim);
         }
 
         return true;
