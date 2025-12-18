@@ -4,6 +4,7 @@ main: me.ryanhamshire.GriefPrevention.GriefPrevention
 description: The official self-service anti-griefing Bukkit plugin for Minecraft servers since 2011.
 website: https://github.com/TechFortress/GriefPrevention
 api-version: '1.21'
+folia-supported: true
 dependencies:
   server:
     Bukkit:
