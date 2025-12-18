@@ -23,6 +23,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.griefprevention.commands.CommandAliasConfiguration;
 import com.griefprevention.commands.TabCompletions;
+import com.griefprevention.protection.InteractionProtectionHandler;
 import com.griefprevention.protection.ProtectionHelper;
 import me.ryanhamshire.GriefPrevention.DataStore.NoTransferException;
 import me.ryanhamshire.GriefPrevention.events.SaveTrappedPlayerEvent;
@@ -152,12 +153,14 @@ public class GriefPrevention extends JavaPlugin {
     public int config_claims_maxAccruedBlocks_default; // the limit on accrued blocks (over time) for players without
                                                        // any special permissions. doesn't limit purchased or
                                                        // admin-gifted blocks
-    public int config_claims_maxDepth; // limit on how deep claims can go
+    public int config_claims_minY; // minimum Y coordinate claims can reach
     public int config_claims_expirationDays; // how many days of inactivity before a player loses his claims
     public int config_claims_expirationExemptionTotalBlocks; // total claim blocks amount which will exempt a player
                                                              // from claim expiration
     public int config_claims_expirationExemptionBonusBlocks; // bonus claim blocks amount which will exempt a player
                                                              // from claim expiration
+
+    public HashMap<String, Integer> config_claims_minYOverride; // per-world override for minimum Y coordinate
 
     public int config_claims_automaticClaimsForNewPlayersRadius; // how big automatic new player claims (when they place
                                                                  // a chest) should be. -1 to disable
@@ -424,6 +427,9 @@ public class GriefPrevention extends JavaPlugin {
         entityDamageHandler = new EntityDamageHandler(this.dataStore, this);
         pluginManager.registerEvents(entityDamageHandler, this);
 
+        // special interaction-related events
+        pluginManager.registerEvents(new InteractionProtectionHandler(), this);
+
         // cache offline players
         OfflinePlayer[] offlinePlayers = this.getServer().getOfflinePlayers();
         CacheOfflinePlayerNamesThread namesThread = new CacheOfflinePlayerNamesThread(offlinePlayers,
@@ -682,12 +688,41 @@ public class GriefPrevention extends JavaPlugin {
                 .abs(config.getInt("GriefPrevention.Claims.ExtendIntoGroundDistance", 5));
         this.config_claims_minWidth = config.getInt("GriefPrevention.Claims.MinimumWidth", 5);
         this.config_claims_minArea = config.getInt("GriefPrevention.Claims.MinimumArea", 100);
-        this.config_claims_maxDepth = config.getInt("GriefPrevention.Claims.MaximumDepth", Integer.MIN_VALUE);
-        if (configVersion < 1 && this.config_claims_maxDepth == 0) {
-            // If MaximumDepth is untouched in an older configuration, correct it.
-            this.config_claims_maxDepth = Integer.MIN_VALUE;
-            AddLogEntry("Updated default value for GriefPrevention.Claims.MaximumDepth to " + Integer.MIN_VALUE);
+
+        this.config_claims_minY = config.getInt("GriefPrevention.Claims.MinimumY", Integer.MIN_VALUE);
+        // Warn if MinimumY is set above sea level, as this is likely unintended
+        if (this.config_claims_minY != Integer.MIN_VALUE) {
+            for (World world : worlds) {
+                // Only check worlds where claims are enabled
+                if (!this.claimsEnabledForWorld(world))
+                    continue;
+
+                int minY = this.config_claims_minY;
+                int seaLevel = this.getSeaLevel(world);
+                if (minY > seaLevel) {
+                    getLogger().warning(
+                            "MinimumY (" + minY + ") is set above sea level (" + seaLevel + ") " +
+                                    "for world '" + world.getName() + "'. This prevents claims extending below Y=" +
+                                    minY + ", which may not have been intended.");
+                    break; // Show warning once only - minY is a global setting
+                }
+            }
         }
+
+        // minimum Y per world
+        this.config_claims_minYOverride = new HashMap<>();
+        for (World world : worlds) {
+            String configPath = "GriefPrevention.Claims.MinimumYOverrides." + world.getName();
+            if (config.contains(configPath)) {
+                int minYOverride = config.getInt(configPath);
+                outConfig.set(configPath, minYOverride);
+                this.config_claims_minYOverride.put(world.getName(), minYOverride);
+            } else {
+                // Don't write default values to config - absence means "use global setting"
+                outConfig.set(configPath, null);
+            }
+        }
+
         this.config_claims_chestClaimExpirationDays = config.getInt("GriefPrevention.Claims.Expiration.ChestClaimDays",
                 7);
         this.config_claims_expirationDays = config.getInt("GriefPrevention.Claims.Expiration.AllClaims.DaysInactive",
@@ -1725,8 +1760,7 @@ public class GriefPrevention extends JavaPlugin {
             if (args.length != 1)
                 return false;
 
-            this.handleTrustCommand(player, null, args[0], false); // null indicates permissiontrust to the helper
-                                                                   // method
+            this.handleTrustCommand(player, ClaimPermission.Manage, args[0], false);
 
             return true;
         }
@@ -2700,22 +2734,24 @@ public class GriefPrevention extends JavaPlugin {
             if (!childClaim.getSubclaimRestrictions()) {
                 if (isAddingTrust) {
                     // Add trust to child claim
-                    if (permissionLevel == null) {
+                    if (permissionLevel == ClaimPermission.Manage) {
                         // Manager permission
                         if (!childClaim.managers.contains(identifier)) {
                             childClaim.managers.add(identifier);
                         }
-                    } else {
+                    } else if (permissionLevel != null) {
                         // Regular permission
                         childClaim.setPermission(identifier, permissionLevel);
                     }
                     this.dataStore.saveClaim(childClaim);
                 } else {
                     // Remove trust from child claim
-                    if (permissionLevel == null) {
+                    if (permissionLevel == ClaimPermission.Manage || permissionLevel == null) {
                         // Manager permission
                         childClaim.managers.remove(identifier);
-                    } else {
+                    }
+                    
+                    if (permissionLevel != ClaimPermission.Manage) {
                         // Regular permission - only remove if it's not explicitly set in the child
                         // Check if identifier is a UUID string or permission string
                         if (identifier.startsWith("[") && identifier.endsWith("]")) {
@@ -2813,14 +2849,9 @@ public class GriefPrevention extends JavaPlugin {
             // Only check permissions if we have a specific claim (not applying to all
             // claims)
             if (claim != null) {
-                // permission level null indicates granting permission trust
-                if (permissionLevel == null) {
-                    Supplier<String> permissionCheck = claim.checkPermission(player, ClaimPermission.Edit, null);
-                    if (permissionCheck != null) {
-                        errorMessage = () -> "Only " + claim.getOwnerName() + " can grant /PermissionTrust here.";
-                    } else {
-                        errorMessage = null;
-                    }
+                // Only owners can grant Manage trust
+                if (permissionLevel == ClaimPermission.Manage) {
+                    errorMessage = claim.checkPermission(player, ClaimPermission.Edit, null);
                 }
                 // otherwise just use the ClaimPermission enum values
                 else {
@@ -2830,7 +2861,7 @@ public class GriefPrevention extends JavaPlugin {
 
             // error message for trying to grant a permission the player doesn't have
             if (errorMessage != null) {
-                GriefPrevention.sendMessage(player, TextMode.Err, Messages.CantGrantThatPermission);
+                GriefPrevention.sendMessage(player, TextMode.Err, errorMessage.get());
                 return;
             }
 
@@ -2855,7 +2886,7 @@ public class GriefPrevention extends JavaPlugin {
 
             // apply changes
             for (Claim currentClaim : event.getClaims()) {
-                if (permissionLevel == null) {
+                if (permissionLevel == ClaimPermission.Manage) {
                     if (!currentClaim.managers.contains(identifierToAdd)) {
                         currentClaim.managers.add(identifierToAdd);
                     }
@@ -2872,7 +2903,7 @@ public class GriefPrevention extends JavaPlugin {
             if (recipientName.equals("public"))
                 recipientName = this.dataStore.getMessage(Messages.CollectivePublic);
             String permissionDescription;
-            if (permissionLevel == null) {
+            if (permissionLevel == ClaimPermission.Manage) {
                 permissionDescription = this.dataStore.getMessage(Messages.PermissionsPermission);
             } else if (permissionLevel == ClaimPermission.Build) {
                 permissionDescription = this.dataStore.getMessage(Messages.BuildPermission);
@@ -3431,6 +3462,10 @@ public class GriefPrevention extends JavaPlugin {
         }
     }
 
+    public int getMinY(World world) {
+        return this.config_claims_minYOverride.getOrDefault(world.getName(), this.config_claims_minY);
+    }
+
     public boolean containsBlockedIP(String message) {
         message = message.replace("\r\n", "");
         Pattern ipAddressPattern = Pattern.compile("([0-9]{1,3}\\.){3}[0-9]{1,3}");
@@ -3652,9 +3687,38 @@ public class GriefPrevention extends JavaPlugin {
                 } else {
                     claim.dropPermission(idToDrop);
                     claim.managers.remove(idToDrop);
-                    // Handle inheritance logic here...
+
+                    // Check if this claim has inherited permissions that need to be explicitly removed
+                    if (claim.parent != null && !claim.getSubclaimRestrictions()) {
+                        // Get all permissions from parent that would be inherited
+                        ArrayList<String> parentBuilders = new ArrayList<>();
+                        ArrayList<String> parentContainers = new ArrayList<>();
+                        ArrayList<String> parentAccessors = new ArrayList<>();
+                        ArrayList<String> parentManagers = new ArrayList<>();
+                        claim.parent.getPermissions(parentBuilders, parentContainers, parentAccessors, parentManagers);
+
+                        // Check if the player being untrusted is in any of the parent's permission lists
+                        String playerIdToCheck = idToDrop.toLowerCase();
+                        if (parentManagers.contains(playerIdToCheck) ||
+                                parentBuilders.contains(playerIdToCheck) ||
+                                parentContainers.contains(playerIdToCheck) ||
+                                parentAccessors.contains(playerIdToCheck)) {
+                            // Use denials to block inherited trust
+                            if (parentManagers.contains(playerIdToCheck))
+                                claim.denyPermission(playerIdToCheck + "#manager");
+                            if (parentBuilders.contains(playerIdToCheck))
+                                claim.denyPermission(playerIdToCheck + "#build");
+                            if (parentContainers.contains(playerIdToCheck))
+                                claim.denyPermission(playerIdToCheck + "#inventory");
+                            if (parentAccessors.contains(playerIdToCheck))
+                                claim.denyPermission(playerIdToCheck + "#access");
+                        }
+                    }
                 }
                 this.dataStore.saveClaim(claim);
+
+                // Propagate trust removal to child claims that inherit permissions
+                propagateTrustToChildren(claim, idToDrop, null, false);
             }
 
             if (!clearPermissions) {
