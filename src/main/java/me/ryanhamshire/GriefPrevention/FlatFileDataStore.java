@@ -246,7 +246,7 @@ public class FlatFileDataStore extends DataStore
                 {
                     claimID = this.nextClaimID;
                     this.incrementNextClaimID();
-                    File newFile = new File(claimDataFolderPath + File.separator + String.valueOf(this.nextClaimID));
+                    File newFile = new File(claimDataFolderPath + File.separator + this.nextClaimID);
                     files[i].renameTo(newFile);
                     files[i] = newFile;
                 }
@@ -385,7 +385,7 @@ public class FlatFileDataStore extends DataStore
                         StringWriter errors = new StringWriter();
                         e.printStackTrace(new PrintWriter(errors));
                         GriefPrevention.AddLogEntry("Failed to load claim " + files[i].getName() + ". This usually occurs when your server runs out of storage space, causing any file saves to corrupt. Fix or delete the file found in GriefPreventionData/ClaimData/" + files[i].getName(), CustomLogEntryTypes.Debug, false);
-                        GriefPrevention.AddLogEntry(files[i].getName() + " " + errors.toString(), CustomLogEntryTypes.Exception);
+                        GriefPrevention.AddLogEntry(files[i].getName() + " " + errors, CustomLogEntryTypes.Exception);
                     }
                 }
 
@@ -429,7 +429,7 @@ public class FlatFileDataStore extends DataStore
                 {
                     claimID = this.nextClaimID;
                     this.incrementNextClaimID();
-                    File newFile = new File(claimDataFolderPath + File.separator + String.valueOf(this.nextClaimID) + ".yml");
+                    File newFile = new File(claimDataFolderPath + File.separator + this.nextClaimID + ".yml");
                     files[i].renameTo(newFile);
                     files[i] = newFile;
                 }
@@ -438,7 +438,7 @@ public class FlatFileDataStore extends DataStore
                 {
                     ArrayList<Long> out_parentID = new ArrayList<>();  //hacky output parameter
                     Claim claim = this.loadClaim(files[i], out_parentID, claimID);
-                    if (out_parentID.size() == 0 || out_parentID.get(0) == -1)
+                    if (out_parentID.isEmpty() || out_parentID.get(0) == -1)
                     {
                         this.addClaim(claim, false);
                     }
@@ -459,7 +459,7 @@ public class FlatFileDataStore extends DataStore
                     {
                         StringWriter errors = new StringWriter();
                         e.printStackTrace(new PrintWriter(errors));
-                        GriefPrevention.AddLogEntry(files[i].getName() + " " + errors.toString(), CustomLogEntryTypes.Exception);
+                        GriefPrevention.AddLogEntry(files[i].getName() + " " + errors, CustomLogEntryTypes.Exception);
                     }
                 }
             }
@@ -744,7 +744,7 @@ public class FlatFileDataStore extends DataStore
             //open the claim's file
             File claimFile = new File(claimDataFolderPath + File.separator + claimID + ".yml");
             claimFile.createNewFile();
-            Files.write(yaml.getBytes("UTF-8"), claimFile);
+            Files.write(yaml.getBytes(StandardCharsets.UTF_8), claimFile);
         }
 
         //if any problem, log it
@@ -752,7 +752,7 @@ public class FlatFileDataStore extends DataStore
         {
             StringWriter errors = new StringWriter();
             e.printStackTrace(new PrintWriter(errors));
-            GriefPrevention.AddLogEntry(claimID + " " + errors.toString(), CustomLogEntryTypes.Exception);
+            GriefPrevention.AddLogEntry(claimID + " " + errors, CustomLogEntryTypes.Exception);
         }
     }
 
@@ -891,7 +891,7 @@ public class FlatFileDataStore extends DataStore
                     latestException.printStackTrace(new PrintWriter(errors));
                 }
                 GriefPrevention.AddLogEntry("Failed to load PlayerData for " + playerID + ". This usually occurs when your server runs out of storage space, causing any file saves to corrupt. Fix or delete the file in GriefPrevetionData/PlayerData/" + playerID, CustomLogEntryTypes.Debug, false);
-                GriefPrevention.AddLogEntry(playerID + " " + errors.toString(), CustomLogEntryTypes.Exception);
+                GriefPrevention.AddLogEntry(playerID + " " + errors, CustomLogEntryTypes.Exception);
             }
         }
 
@@ -915,25 +915,25 @@ public class FlatFileDataStore extends DataStore
             fileContent.append("\n");
 
             //second line is accrued claim blocks
-            fileContent.append(String.valueOf(playerData.getAccruedClaimBlocks()));
+            fileContent.append(playerData.getAccruedClaimBlocks());
             fileContent.append("\n");
 
             //third line is bonus claim blocks
-            fileContent.append(String.valueOf(playerData.getBonusClaimBlocks()));
+            fileContent.append(playerData.getBonusClaimBlocks());
             fileContent.append("\n");
 
             //fourth line is blank
             fileContent.append("\n");
 
             //write data to file
-            File playerDataFile = new File(playerDataFolderPath + File.separator + playerID.toString());
-            Files.write(fileContent.toString().getBytes("UTF-8"), playerDataFile);
+            File playerDataFile = new File(playerDataFolderPath + File.separator + playerID);
+            Files.write(fileContent.toString().getBytes(StandardCharsets.UTF_8), playerDataFile);
         }
 
         //if any problem, log it
         catch (Exception e)
         {
-            GriefPrevention.AddLogEntry("GriefPrevention: Unexpected exception saving data for player \"" + playerID.toString() + "\": " + e.getMessage());
+            GriefPrevention.AddLogEntry("GriefPrevention: Unexpected exception saving data for player \"" + playerID + "\": " + e.getMessage());
             e.printStackTrace();
         }
     }
