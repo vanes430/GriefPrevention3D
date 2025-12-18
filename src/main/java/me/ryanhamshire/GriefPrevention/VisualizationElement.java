@@ -28,6 +28,7 @@ import org.bukkit.block.data.BlockData;
  * @deprecated replaced by {@link BlockElement}
  */
 @Deprecated(forRemoval = true, since = "16.18")
+@SuppressWarnings({"deprecation", "removal"})
 public class VisualizationElement
 {
     public Location location;

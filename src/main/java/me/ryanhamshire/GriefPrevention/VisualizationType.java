@@ -24,6 +24,7 @@ import org.bukkit.block.data.BlockData;
  * @deprecated {@link com.griefprevention.visualization.VisualizationType}
  */
 @Deprecated(forRemoval = true, since = "16.18")
+@SuppressWarnings({"deprecation", "removal"})
 public enum VisualizationType
 {
     Claim,

@@ -42,6 +42,7 @@ import java.util.stream.Collectors;
  * @deprecated superseded by {@link BoundaryVisualization}
  */
 @Deprecated(forRemoval = true, since = "16.18")
+@SuppressWarnings({"deprecation", "removal"})
 public class Visualization
 {
 

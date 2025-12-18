@@ -23,6 +23,7 @@ import java.util.Set;
  * @deprecated Replaced with {@link BoundaryVisualizationEvent}
  */
 @Deprecated(forRemoval = true, since = "16.18")
+@SuppressWarnings({"deprecation", "removal"})
 public class VisualizationEvent extends PlayerEvent
 {
 
