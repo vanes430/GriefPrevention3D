@@ -28,7 +28,7 @@ public class UnifiedClaimCommand extends UnifiedCommandHandler {
         registerSubcommand("trust", this::handleTrust, "accesstrust", "containertrust", "permissiontrust");
         registerSubcommand("untrust", this::handleUntrust);
         registerSubcommand("trustlist", this::handleTrustList);
-        registerSubcommand("list", this::handleList);
+        registerSubcommand("clist", this::handleList);
         registerSubcommand("mode", createModeTabExecutor());
         registerSubcommand("restrictsubclaim", this::handleRestrictSubclaim);
         registerSubcommand("explosions", this::handleExplosions);
@@ -44,7 +44,7 @@ public class UnifiedClaimCommand extends UnifiedCommandHandler {
         registerStandaloneCommand(Alias.ClaimTrust, this::handleTrust);
         registerStandaloneCommand(Alias.ClaimUntrust, this::handleUntrust);
         registerStandaloneCommand(Alias.ClaimTrustlist, this::handleTrustList);
-        registerStandaloneCommand(Alias.ClaimList, this::handleList);
+        registerStandaloneCommand(Alias.ClaimCList, this::handleList);
         registerStandaloneCommand(Alias.ClaimMode, createModeTabExecutor());
         registerStandaloneCommand(Alias.ClaimRestrictSubclaim, this::handleRestrictSubclaim);
         registerStandaloneCommand(Alias.ClaimExplosions, this::handleExplosions);

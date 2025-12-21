@@ -21,7 +21,7 @@ public class UnifiedAdminClaimCommand extends UnifiedCommandHandler {
         registerSubcommand("ignore", this::handleIgnore);
         registerSubcommand("mode", this::handleMode);
         registerSubcommand("adminlist", this::handleAdminList);
-        registerSubcommand("list", this::handleList);
+        registerSubcommand("clist", this::handleList);
         registerSubcommand("checkexpiry", this::handleCheckExpiry);
         registerSubcommand("blocks", this::handleBlocks);
         registerSubcommand("delete", this::handleDelete, "deleteclaim", "deleteallclaims", "deleteclaimsinworld",
@@ -33,7 +33,7 @@ public class UnifiedAdminClaimCommand extends UnifiedCommandHandler {
         registerStandaloneCommand(Alias.AClaimIgnore, this::handleIgnore);
         registerStandaloneCommand(Alias.AClaimMode, this::handleMode);
         registerStandaloneCommand(Alias.AClaimAdminList, this::handleAdminList);
-        registerStandaloneCommand(Alias.AClaimList, this::handleList);
+        registerStandaloneCommand(Alias.AClaimCList, this::handleList);
         registerStandaloneCommand(Alias.AClaimCheckExpiry, this::handleCheckExpiry);
         registerStandaloneCommand(Alias.AClaimBlocks, this::handleBlocks);
         registerStandaloneCommand(Alias.AClaimDelete, this::handleDelete);

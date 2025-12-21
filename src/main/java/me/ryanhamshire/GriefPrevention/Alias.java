@@ -93,16 +93,16 @@ public enum Alias {
       description: Show players who have access to this claim.
       """, "trustlist"),
 
-  ClaimList("""
+  ClaimCList("""
       enable: true
-      commands: [list]
-      standalone: [claimslist]
-      usage: "/claim list [player]"
+      commands: [clist]
+      standalone: [clist]
+      usage: "/claim clist [player]"
       description: List claims owned by you or another player.
       arguments:
         player:
           type: player
-      """, "list"),
+      """, "clist"),
 
   ClaimMode("""
       enable: true
@@ -236,15 +236,15 @@ public enum Alias {
       description: List administrative claims on the current server.
       """, "adminlist"),
 
-  AClaimList("""
+  AClaimCList("""
       enable: true
-      commands: [list]
-      usage: "/aclaim list [player]"
+      commands: [clist]
+      usage: "/aclaim clist [player]"
       description: Show claims owned by a player (including admin claims).
       arguments:
         player:
           type: player
-      """, "list"),
+      """, "clist"),
 
   AClaimCheckExpiry("""
       enable: true
@@ -387,11 +387,11 @@ public enum Alias {
               usage: "/claim trustlist"
               description: Show players who have access to this claim.
 
-            list:
+            clist:
               enable: true
-              commands: [list]
-              standalone: [claimslist]
-              usage: "/claim list [player]"
+              commands: [clist]
+              standalone: [clist]
+              usage: "/claim clist [player]"
               description: List claims owned by you or another player.
               arguments:
                 player:
@@ -517,10 +517,10 @@ public enum Alias {
               usage: "/adminlist"
               description: List administrative claims on the current server.
 
-            list:
+            clist:
               enable: true
-              commands: [list]
-              usage: "/aclaim list [player]"
+              commands: [clist]
+              usage: "/aclaim clist [player]"
               description: Show claims owned by a player (including admin claims).
               arguments:
                 player:

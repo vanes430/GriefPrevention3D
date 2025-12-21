@@ -199,7 +199,7 @@ commands:
     description: Create a claim.
     usage: /<command>
     permission: griefprevention.claims
-  list:
+  clist:
     description: List your claims.
     usage: /<command>
     permission: griefprevention.claims
