@@ -37,7 +37,7 @@ public class PlayerData
     public UUID playerID;
 
     //the player's claims
-    private Vector<Claim> claims = null;
+    private java.util.concurrent.CopyOnWriteArrayList<Claim> claims = null;
 
     //how many claim blocks the player has earned via play time
     private Integer accruedClaimBlocks = null;
@@ -256,26 +256,22 @@ public class PlayerData
         }
     }
 
-    public Vector<Claim> getClaims()
+    public java.util.concurrent.CopyOnWriteArrayList<Claim> getClaims()
     {
         if (this.claims == null)
         {
-            this.claims = new Vector<>();
+            this.claims = new java.util.concurrent.CopyOnWriteArrayList<>();
 
             //find all the claims belonging to this player and note them for future reference
             DataStore dataStore = GriefPrevention.instance.dataStore;
             int totalClaimsArea = 0;
-            for (int i = 0; i < dataStore.claims.size(); i++)
+            
+            // Safe iteration over CopyOnWriteArrayList
+            for (Claim claim : dataStore.claims)
             {
-                Claim claim = dataStore.claims.get(i);
                 if (!claim.inDataStore)
                 {
-                    Claim remove = dataStore.claims.remove(i--);
-                    dataStore.claimIDMap.remove(remove.getID());
-                    for (Claim child : remove.children)
-                    {
-                        dataStore.claimIDMap.remove(child.getID());
-                    }
+                    // Skip claims not in datastore (cleanup should be handled by DataStore)
                     continue;
                 }
                 if (playerID.equals(claim.ownerID))
@@ -336,13 +332,7 @@ public class PlayerData
             }
         }
 
-        for (int i = 0; i < this.claims.size(); i++)
-        {
-            if (!claims.get(i).inDataStore)
-            {
-                claims.remove(i--);
-            }
-        }
+        this.claims.removeIf(claim -> !claim.inDataStore);
 
         return claims;
     }

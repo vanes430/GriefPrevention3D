@@ -187,17 +187,16 @@ import me.ryanhamshire.GriefPrevention.util.SchedulerUtil;
          this.whisperCommands = new MonitoredCommands(instance.config_eavesdrop_whisperCommands);
      }
  
-     //when a player chats, monitor for spam
-     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
-     synchronized void onPlayerChat(AsyncPlayerChatEvent event)
-     {
-         Player player = event.getPlayer();
-         if (!player.isOnline())
+         //when a player chats, monitor for spam
+         @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
+         void onPlayerChat(AsyncPlayerChatEvent event)
          {
-             event.setCancelled(true);
-             return;
-         }
- 
+             Player player = event.getPlayer();
+             if (!player.isOnline())
+             {
+                 event.setCancelled(true);
+                 return;
+             } 
          String message = event.getMessage();
  
          boolean muted = this.handlePlayerChat(player, message, event);
@@ -437,12 +436,11 @@ import me.ryanhamshire.GriefPrevention.util.SchedulerUtil;
          return false;
      }
  
-     //when a player uses a slash command...
-     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
-     synchronized void onPlayerCommandPreprocess(PlayerCommandPreprocessEvent event)
-     {
-         MonitorableCommand command = new MonitorableCommand(event.getMessage());
- 
+         //when a player uses a slash command...
+         @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
+         void onPlayerCommandPreprocess(PlayerCommandPreprocessEvent event)
+         {
+             MonitorableCommand command = new MonitorableCommand(event.getMessage()); 
          CommandCategory category = this.getCommandCategory(command);
  
          Player player = event.getPlayer();

@@ -73,32 +73,32 @@ public class Claim
      public UUID ownerID;
  
      //list of players who (beyond the claim owner) have permission to grant permissions in this claim
-     public ArrayList<String> managers = new ArrayList<>();
+    public java.util.concurrent.CopyOnWriteArrayList<String> managers = new java.util.concurrent.CopyOnWriteArrayList<>();
 
-     //permissions for this claim, see ClaimPermission class
-     private HashMap<String, ClaimPermission> playerIDToClaimPermissionMap = new HashMap<>();
+    //permissions for this claim, see ClaimPermission class
+    private java.util.concurrent.ConcurrentHashMap<String, ClaimPermission> playerIDToClaimPermissionMap = new java.util.concurrent.ConcurrentHashMap<>();
 
     //players/permissions explicitly denied in this claim (override parent inheritance)
-    private final HashSet<String> deniedPermissions = new HashSet<>();
+    private final Set<String> deniedPermissions = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
-     //whether or not this claim is in the data store
-     //if a claim instance isn't in the data store, it isn't "active" - players can't interract with it
-     //why keep this?  so that claims which have been removed from the data store can be correctly
-     //ignored even though they may have references floating around
-     public boolean inDataStore = false;
- 
-     public boolean areExplosivesAllowed = false;
- 
-     //parent claim
-     //only used for claim subdivisions.  top level claims have null here
-     public Claim parent = null;
- 
-     // intended for subclaims - they inherit no permissions
-     private boolean inheritNothing = false;
- 
-     //children (subdivisions)
-     //note subdivisions themselves never have children
-     public ArrayList<Claim> children = new ArrayList<>();
+    //whether or not this claim is in the data store
+    //if a claim instance isn't in the data store, it isn't "active" - players can't interract with it
+    //why keep this?  so that claims which have been removed from the data store can be correctly
+    //ignored even though they may have references floating around
+    public volatile boolean inDataStore = false;
+
+    public boolean areExplosivesAllowed = false;
+
+    //parent claim
+    //only used for claim subdivisions.  top level claims have null here
+    public Claim parent = null;
+
+    // intended for subclaims - they inherit no permissions
+    private boolean inheritNothing = false;
+
+    //children (subdivisions)
+    //note subdivisions themselves never have children
+    public java.util.concurrent.CopyOnWriteArrayList<Claim> children = new java.util.concurrent.CopyOnWriteArrayList<>();
  
      //following a siege, buttons/levers are unlocked temporarily.  this represents that state
      public boolean doorsOpen = false;
@@ -208,24 +208,24 @@ public class Claim
      }
  
      //produces a copy of a claim.
-     public Claim(Claim claim) {
-         this.modifiedDate = claim.modifiedDate;
-         this.lesserBoundaryCorner = claim.lesserBoundaryCorner.clone();
-         this.greaterBoundaryCorner = claim.greaterBoundaryCorner.clone();
-         this.id = claim.id;
-         this.ownerID = claim.ownerID;
-         this.managers = new ArrayList<>(claim.managers);
-         this.playerIDToClaimPermissionMap = new HashMap<>(claim.playerIDToClaimPermissionMap);
+    public Claim(Claim claim) {
+        this.modifiedDate = claim.modifiedDate;
+        this.lesserBoundaryCorner = claim.lesserBoundaryCorner.clone();
+        this.greaterBoundaryCorner = claim.greaterBoundaryCorner.clone();
+        this.id = claim.id;
+        this.ownerID = claim.ownerID;
+        this.managers = new java.util.concurrent.CopyOnWriteArrayList<>(claim.managers);
+        this.playerIDToClaimPermissionMap = new java.util.concurrent.ConcurrentHashMap<>(claim.playerIDToClaimPermissionMap);
         this.deniedPermissions.addAll(claim.deniedPermissions);
-         this.inDataStore = false; //since it's a copy of a claim, not in datastore!
-         this.areExplosivesAllowed = claim.areExplosivesAllowed;
-         this.parent = claim.parent;
-         this.inheritNothing = claim.inheritNothing;
-         this.children = new ArrayList<>(claim.children);
-         this.doorsOpen = claim.doorsOpen;
-         this.is3D = claim.is3D;
-         this.expirationDate = claim.expirationDate;
-     }
+        this.inDataStore = false; //since it's a copy of a claim, not in datastore!
+        this.areExplosivesAllowed = claim.areExplosivesAllowed;
+        this.parent = claim.parent;
+        this.inheritNothing = claim.inheritNothing;
+        this.children = new java.util.concurrent.CopyOnWriteArrayList<>(claim.children);
+        this.doorsOpen = claim.doorsOpen;
+        this.is3D = claim.is3D;
+        this.expirationDate = claim.expirationDate;
+    }
  
      //measurements.  all measurements are in blocks
      public int getArea()

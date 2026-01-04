@@ -1,49 +1,101 @@
-<p align="center">
-<img alt="GriefPrevention" width=100% height=auto src="https://repository-images.githubusercontent.com/68339667/9b3f7c00-ce61-11ea-82d1-208eaa0606e8">
-</p>
+# GriefPrevention3D (Folia Edition)
 
-<h1 align="center">The self-service anti-griefing plugin for Minecraft servers since 2011</h1>
-
-<p align="center">
-<a href="https://github.com/castledking/GriefPrevention/releases/tag/17.0.0"><img alt="Downloads" src="https://img.shields.io/badge/Downloads-green" height="70px"></a>
-<a href="https://r.griefprevention.com/docs"><img alt="Docs" src="https://img.shields.io/badge/Docs-gray?logo=readthedocs&logoColor=white" height="70px"></a>
-<a href="#support"><img alt="Get Help" src="https://img.shields.io/badge/Get%20Help-yellow?logo=amazoncloudwatch&logoColor=white" height="70px"></a>
-
-</p>
-  
-Stop _responding_ to grief and prevent it instead. GriefPrevention stops grief before it starts automatically without any effort from administrators, and with very little (self service) effort from players.
-
-##### [Watch this video](https://www.youtube.com/watch?v=hKrA6NXn7Sc) to learn more how GriefPrevention works in-game.
-[![GriefPrevention Youtube Tutorial](https://img.youtube.com/vi/hKrA6NXn7Sc/0.jpg)](https://www.youtube.com/watch?v=hKrA6NXn7Sc)
+A specialized, high-performance fork of GriefPrevention designed exclusively for **Folia** servers. This version features a fully thread-safe architecture, true 3D claim support, and eliminates global synchronization bottlenecks to ensure lag-free protection in a multi-threaded environment.
 
 ---
 
-## Supported Platforms: Spigot, Paper, and Purpur. 
-### GriefPrevention targets and supports the latest available version of these platforms. Older versions of GriefPrevention can be found on [BukkitDev](https://dev.bukkit.org/projects/grief-prevention/files). These older versions are not supported.
-Other server implementations of the Bukkit API _should_ work, but are untested.
+## ⚡ Key Features & Technical Changes
 
-## Download
-### [Download the GriefPrevention.jar plugin here.](https://github.com/castledking/GriefPrevention/releases)
+### 🚀 Folia Native & Thread-Safe
+Unlike the original GriefPrevention which relies on global `synchronized` locks (which stall Folia's region threads), this version has been heavily refactored:
+*   **Lock-Free Architecture:** Critical paths like claim lookups (`getClaimAt`) and event handling are now lock-free.
+*   **Concurrent Collections:** Utilizes `ConcurrentHashMap` and `CopyOnWriteArrayList` to ensure data integrity across multiple threads without blocking region ticks.
+*   **Atomic Operations:** Claim data modifications utilize atomic operations to prevent race conditions.
 
-## Addons
-### [Addons](https://r.griefprevention.com/addons) provide additional features to GriefPrevention. Some of these addons are listed in [GitHub Discussions](https://r.griefprevention.com/addons)
-
-## Support
-- [📖 Documentation](https://r.griefprevention.com/docs) - Learn how GriefPrevention works. Contains answers to most questions.
-- [Issue Tracker](https://github.com/GriefPrevention/GriefPrevention/issues) - Report problems or bugs on the issue tracker. Check if someone else reported your issue before posting.
-- [GitHub Discussions](https://github.com/GriefPrevention/GriefPrevention/discussions) - New ideas, feature requests, or other general discussions.
-- [IRC Chat](https://griefprevention.com/chat/) or [Discord](https://r.griefprevention.com/dumcord/)
-
-## GriefPrevention Legacy
-
-GriefPrevention Legacy is the "friendly" name of GriefPrevention version 16. GriefPrevention version 16 will continue to be officially supported with new updates and releases, and is currently the version we recommend for use on production servers.
-
-GriefPrevention Legacy's development exists in the `legacy/v16` branch; be sure to target this branch if you intend to create any pull requests for GriefPrevention Legacy.
-
-## Version 17 and above
-
-Newer major versions of GriefPrevention are developed on the `master` branch. These new versions contain **breaking changes.** Please **do not** use these versions of GriefPrevention on production servers!
+### 🧊 True 3D Claims
+*   **Vertical Subdivisions:** Create stacked claims (e.g., apartments, multi-story bases) that respect Y-axis boundaries.
+*   **3D Mode:** Toggle your shovel between 2D (infinite height) and 3D mode easily.
 
 ---
 
-[![Weird flex but ok](https://bstats.org/signatures/bukkit/GriefPrevention-legacy.svg)](https://bstats.org/plugin/bukkit/GriefPrevention-legacy)
+## 📥 Installation
+
+1.  **Requirements:**
+    *   Server Software: **Folia** (or a compatible fork). *Not compatible with standard Spigot/Paper.*
+    *   Java: Java 21 or higher.
+2.  **Setup:**
+    *   Download the `GriefPrevention3D.jar`.
+    *   Place it in your server's `plugins/` folder.
+    *   Restart the server.
+
+---
+
+## 🎮 Command & Permission Reference
+
+### 👤 Player Commands
+Commands available to regular players for managing their claims.
+
+| Command | Aliases | Description | Permission |
+| :--- | :--- | :--- | :--- |
+| `/claim` | | Create a claim using the golden shovel. | `griefprevention.createclaims` |
+| `/abandonclaim` | `unclaim`, `declaim` | Delete the claim you are currently standing in. | `griefprevention.claims` |
+| `/abandonallclaims` | | Delete **ALL** of your claims. | `griefprevention.abandonallclaims` |
+| `/trust <player>` | `tr` | Grant full build access to a player. | `griefprevention.claims` |
+| `/untrust <player>` | `ut` | Revoke access from a player. | `griefprevention.claims` |
+| `/containertrust <player>` | `ct` | Grant access to chests, crops, animals, and buttons. | `griefprevention.claims` |
+| `/accesstrust <player>` | `at` | Grant access to buttons, levers, and beds (no building). | `griefprevention.claims` |
+| `/permissiontrust <player>` | `pt` | Grant permission to manage the trust list. | `griefprevention.claims` |
+| `/trustlist` | | List all trusted players in the current claim. | `griefprevention.claims` |
+| `/subdivideclaims` | `sc` | Switch shovel to **2D subdivision** mode (infinite height). | `griefprevention.claims` |
+| `/3dsubdivideclaims` | `3dsubdivideclaim` | Switch shovel to **3D subdivision** mode (height restricted). | `griefprevention.claims` |
+| `/basicclaims` | `bc` | Switch shovel back to basic claim creation mode. | `griefprevention.claims` |
+| `/claimslist` | `listclaims` | View your claim block balance and claim locations. | `griefprevention.claims` |
+| `/trapped` | | Eject yourself to nearby safe wilderness (has cooldown). | `griefprevention.trapped` |
+| `/unlockdrops` | | Allow other players to pick up your death drops. | `griefprevention.unlockdrops` |
+| `/givepet` | | Transfer a tamed pet to another player. | `griefprevention.givepet` |
+| `/buyblocks` | | Buy claim blocks with server currency. | `griefprevention.buysellclaimblocks` |
+| `/sellblocks` | | Sell claim blocks for server currency. | `griefprevention.buysellclaimblocks` |
+| `/ignoreplayer <player>` | `ignore` | Ignore chat messages from a specific player. | `griefprevention.ignore` |
+| `/unignoreplayer <player>` | `unignore` | Stop ignoring a player. | `griefprevention.ignore` |
+
+### 🛡️ Administrative Commands
+Commands for server staff to manage claims and moderation.
+
+| Command | Aliases | Description | Permission |
+| :--- | :--- | :--- | :--- |
+| `/adminclaims` | `ac` | Switch shovel to Admin Claim mode (free, no owner, infinite). | `griefprevention.adminclaims` |
+| `/adminclaimslist` | | List all administrative claims. | `griefprevention.adminclaims` |
+| `/deleteclaim` | | Force delete the claim you are standing in. | `griefprevention.deleteclaims` |
+| `/deleteallclaims <player>` | | Force delete **ALL** claims belonging to a player. | `griefprevention.deleteclaims` |
+| `/deleteclaimsinworld` | | (Console) Delete all claims in a specific world. | `griefprevention.deleteclaimsinworld` |
+| `/deletealladminclaims` | | (Console) Delete all admin claims. | `griefprevention.adminclaims` |
+| `/ignoreclaims` | `ic` | Toggle "Ignore Claims" mode (bypass protections). | `griefprevention.ignoreclaims` |
+| `/adjustbonusclaimblocks` | `acb` | Add/subtract bonus claim blocks for a player. | `griefprevention.adjustclaimblocks` |
+| `/setaccruedclaimblocks` | `scb` | Set the precise accrued block count for a player. | `griefprevention.adjustclaimblocks` |
+| `/restorenature` | `restore` | Switch shovel to Restoration Mode (revert terrain). | `griefprevention.adminclaims` |
+| `/transferclaim <player>` | | Transfer the claim you are standing in to another player. | `griefprevention.transferclaim` |
+| `/softmute <player>` | | Soft-mute a player (they can chat, but no one hears them). | `griefprevention.softmute` |
+| `/separate <p1> <p2>` | | Force two players to ignore each other permanently. | `griefprevention.separate` |
+| `/gpreload` | | Reload the plugin configuration and messages. | `griefprevention.reload` |
+
+---
+
+## 🛠️ How to Use 3D Claims
+
+1.  **Create a Main Claim:**
+    *   Use a Golden Shovel.
+    *   Right-click two corners to create a standard 2D protection (protects from bedrock to sky).
+2.  **Create a 3D Subdivision (Apartment/Floor):**
+    *   Stand inside your main claim.
+    *   Run `/3dsubdivideclaims` (or `/mode 3d`).
+    *   Right-click the **bottom corner** (e.g., the floor of the 1st story).
+    *   Right-click the **top corner** (e.g., the ceiling of the 1st story).
+    *   You now have a subclaim that only exists between those Y-levels. You can trust players to this specific floor without giving them access to the roof or basement.
+
+---
+
+## ⚖️ Credits
+
+*   **Ryan Hamshire**: The original creator of GriefPrevention.
+*   **BigScary & GP Community**: For maintaining the legacy codebase.
+*   **GriefPrevention3D Team**: For the Folia concurrency rewrite and 3D implementation.

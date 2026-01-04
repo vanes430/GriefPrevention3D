@@ -70,10 +70,10 @@ public abstract class DataStore {
     protected ConcurrentHashMap<String, Integer> permissionToBonusBlocksMap = new ConcurrentHashMap<>();
 
     // in-memory cache for claim data
-    ArrayList<Claim> claims = new ArrayList<>();
+    java.util.concurrent.CopyOnWriteArrayList<Claim> claims = new java.util.concurrent.CopyOnWriteArrayList<>();
     // claim id to claim cache
     public final Map<Long, Claim> claimIDMap = new ConcurrentHashMap<>();
-    ConcurrentHashMap<Long, ArrayList<Claim>> chunksToClaimsMap = new ConcurrentHashMap<>();
+    ConcurrentHashMap<Long, java.util.concurrent.CopyOnWriteArrayList<Claim>> chunksToClaimsMap = new ConcurrentHashMap<>();
 
     // in-memory cache for messages
     private String[] messages;
@@ -458,12 +458,7 @@ public abstract class DataStore {
 
         ArrayList<Long> chunkHashes = claim.getChunkHashes();
         for (Long chunkHash : chunkHashes) {
-            ArrayList<Claim> claimsInChunk = this.chunksToClaimsMap.get(chunkHash);
-            if (claimsInChunk == null) {
-                this.chunksToClaimsMap.put(chunkHash, claimsInChunk = new ArrayList<>());
-            }
-
-            claimsInChunk.add(claim);
+            this.chunksToClaimsMap.computeIfAbsent(chunkHash, k -> new java.util.concurrent.CopyOnWriteArrayList<>()).add(claim);
         }
     }
 
@@ -475,19 +470,11 @@ public abstract class DataStore {
 
         ArrayList<Long> chunkHashes = claim.getChunkHashes();
         for (Long chunkHash : chunkHashes) {
-            ArrayList<Claim> claimsInChunk = this.chunksToClaimsMap.get(chunkHash);
-            if (claimsInChunk != null) {
-                for (Iterator<Claim> it = claimsInChunk.iterator(); it.hasNext();) {
-                    Claim c = it.next();
-                    if (c.id.equals(claim.id)) {
-                        it.remove();
-                        break;
-                    }
-                }
-                if (claimsInChunk.isEmpty()) { // if nothing's left, remove this chunk's cache
-                    this.chunksToClaimsMap.remove(chunkHash);
-                }
-            }
+            this.chunksToClaimsMap.compute(chunkHash, (k, v) -> {
+                if (v == null) return null;
+                v.removeIf(c -> c.id.equals(claim.id));
+                return v.isEmpty() ? null : v;
+            });
         }
     }
 
@@ -693,7 +680,7 @@ public abstract class DataStore {
     // the claim
     // cachedClaim can be NULL, but will help performance if you have a reasonable
     // guess about which claim the location is in
-    synchronized public Claim getClaimAt(Location location, boolean ignoreHeight, Claim cachedClaim) {
+    public Claim getClaimAt(Location location, boolean ignoreHeight, Claim cachedClaim) {
         return getClaimAt(location, ignoreHeight, false, cachedClaim);
     }
 
@@ -712,7 +699,7 @@ public abstract class DataStore {
      * @param cachedClaim     the cached claim, if any
      * @return the claim containing the location or null if no claim exists there
      */
-    synchronized public Claim getClaimAt(Location location, boolean ignoreHeight, boolean ignoreSubclaims,
+    public Claim getClaimAt(Location location, boolean ignoreHeight, boolean ignoreSubclaims,
             Claim cachedClaim) {
         // Check cached claim first, but don't prematurely return a non-3D claim if a
         // more specific 3D subclaim exists.
@@ -1000,7 +987,7 @@ public abstract class DataStore {
     }
 
     public Collection<Claim> getClaims(int chunkx, int chunkz) {
-        ArrayList<Claim> chunkClaims = this.chunksToClaimsMap.get(getChunkHash(chunkx, chunkz));
+        java.util.concurrent.CopyOnWriteArrayList<Claim> chunkClaims = this.chunksToClaimsMap.get(getChunkHash(chunkx, chunkz));
         if (chunkClaims != null) {
             return Collections.unmodifiableCollection(chunkClaims);
         } else {
@@ -1015,7 +1002,7 @@ public abstract class DataStore {
 
         for (int chunkX = boundingBox.getMinX() >> 4; chunkX <= chunkXMax; ++chunkX) {
             for (int chunkZ = boundingBox.getMinZ() >> 4; chunkZ <= chunkZMax; ++chunkZ) {
-                ArrayList<Claim> chunkClaims = this.chunksToClaimsMap.get(getChunkHash(chunkX, chunkZ));
+                java.util.concurrent.CopyOnWriteArrayList<Claim> chunkClaims = this.chunksToClaimsMap.get(getChunkHash(chunkX, chunkZ));
                 if (chunkClaims == null)
                     continue;
 
@@ -1179,7 +1166,7 @@ public abstract class DataStore {
 
         newClaim.parent = parent;
 
-        ArrayList<Claim> claimsToCheck;
+        List<Claim> claimsToCheck;
         if (parent != null) {
             // Subdivisions should inherit trust from their parent hierarchy by default.
             newClaim.setSubclaimRestrictions(false);

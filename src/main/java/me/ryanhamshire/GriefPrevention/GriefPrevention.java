@@ -2211,7 +2211,7 @@ public class GriefPrevention extends JavaPlugin {
 
             // load the target player's data
             PlayerData playerData = this.dataStore.getPlayerData(otherPlayer.getUniqueId());
-            Vector<Claim> claims = playerData.getClaims();
+            List<Claim> claims = playerData.getClaims();
             GriefPrevention.sendMessage(player, TextMode.Instr, Messages.StartBlockMath,
                     String.valueOf(playerData.getAccruedClaimBlocks()),
                     String.valueOf((playerData.getBonusClaimBlocks()
@@ -2241,7 +2241,7 @@ public class GriefPrevention extends JavaPlugin {
         // adminclaimslist
         else if (cmd.getName().equalsIgnoreCase("adminclaimslist")) {
             // find admin claims
-            Vector<Claim> claims = new Vector<>();
+            List<Claim> claims = new java.util.concurrent.CopyOnWriteArrayList<>();
             for (Claim claim : this.dataStore.claims) {
                 if (claim.ownerID == null) // admin claim
                 {
@@ -3889,7 +3889,7 @@ public class GriefPrevention extends JavaPlugin {
         }
 
         PlayerData playerData = this.dataStore.getPlayerData(otherPlayer.getUniqueId());
-        Vector<Claim> claims = playerData.getClaims();
+        List<Claim> claims = playerData.getClaims();
 
         GriefPrevention.sendMessage(player, TextMode.Instr, Messages.StartBlockMath,
                 String.valueOf(playerData.getAccruedClaimBlocks()),
